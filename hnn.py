@@ -5,7 +5,7 @@ import copy
 class HopfieldNeuralNetwork:
     def __init__(self):
         self.debug_print = True
-        self.square_size = 5
+        self.square_size = 8
         
         self.true_neurons_num = 3
         self.init_true_neuron()
@@ -56,7 +56,7 @@ class HopfieldNeuralNetwork:
                 val = 0
                 for j in range(len(neuron)):
                     val += self.neuron_weight[i][j] * neuron[j]
-                    new_neuron[i] = HopfieldNeuralNetwork.activate_function(val)
+                    new_neuron[i] = self.activate_function(val)
             neuron = new_neuron
         else:
             for i in range(len(neuron)):
@@ -64,7 +64,7 @@ class HopfieldNeuralNetwork:
                 val = 0
                 for j in range(len(neuron)):
                     val += self.neuron_weight[ii][j] * neuron[j]
-                neuron[ii] = HopfieldNeuralNetwork.activate_function(val)
+                neuron[ii] = self.activate_function(val)
         return neuron
 
     def optimize_neuron(self, neuron_):
@@ -105,8 +105,7 @@ class HopfieldNeuralNetwork:
                 return -1
         return 1
     
-    @staticmethod
-    def activate_function(val):
+    def activate_function(self, val):
         return HopfieldNeuralNetwork.sgn(val)
 
     @staticmethod
