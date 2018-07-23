@@ -4,8 +4,8 @@ import copy
 
 class HopfieldNeuralNetwork:
     def __init__(self):
-        self.debug_print = True
-        self.square_size = 8
+        self.debug_print = False
+        self.square_size = 5
         
         self.true_neurons_num = 3
         self.init_true_neuron()
@@ -70,7 +70,7 @@ class HopfieldNeuralNetwork:
     def optimize_neuron(self, neuron_):
         neuron = copy.deepcopy(neuron_)
         #if self.debug_print:
-        #    print("[Neuron Before Trained]")
+        #    print("[Optimize] Neuron Before Trained")
         #    self.print_neuron(neuron)
 
         cnt = 0
@@ -79,12 +79,11 @@ class HopfieldNeuralNetwork:
             neuron = self.update_neuron(neuron, sync=False)
             cnt += 1
             if self.judge_if_match(pre_neuron, neuron) > 0:
-                if self.debug_print:
-                    print("[Train finished with {} times".format(cnt))
+                print("[Optimize] finished with {} times".format(cnt))
                 break
             
         if self.debug_print:
-            print("[Neuron After Trained]")
+            print("[Optimize] Neuron After Trained")
             self.print_neuron(neuron)
         return neuron
 
@@ -95,8 +94,7 @@ class HopfieldNeuralNetwork:
                 sim += 1.
         sim /= len(neuron1)
         
-        if self.debug_print:
-            print("[Similarity] {}%".format(sim * 100))
+        print("[Similarity] {}%".format(sim * 100))
         return sim
 
     def judge_if_match(self, neuron1, neuron2):
