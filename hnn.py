@@ -1,14 +1,25 @@
 import math
 import random
+import copy
 
 class HopfieldNeuralNetwork:
     def __init__(self):
-        self.true_neurons_num = 1
-        self.true_neurons = [[self.plus_or_minus() for i in range(25)] for k in range(self.true_neurons_num)]
+        self.debug_print = True
+        self.square_size = 5
+        
+        self.true_neurons_num = 3
+        self.init_true_neuron()
 
-        self.neuron = [self.plus_or_minus() for i in range(25)]
-        self.neuron_weight = [[0 for i in range(25)] for j in range(25)]
+        self.neuron_weight = [[0 for i in range(self.square_size**2)] for j in range(self.square_size**2)]
+        self.init_neuron_weight()
 
+    def init_true_neuron(self):
+        self.true_neurons = [[HopfieldNeuralNetwork.plus_or_minus() for i in range(self.square_size**2)] for k in range(self.true_neurons_num)]
+        if self.debug_print:
+            print("[True Neuron]")    
+            self.print_true_neuron()
+            
+    def init_neuron_weight(self):
         for i in range(len(self.neuron_weight)):
             for j in range(len(self.neuron_weight[i])):
                 for m in range(self.true_neurons_num):
@@ -16,30 +27,105 @@ class HopfieldNeuralNetwork:
                         continue
                     self.neuron_weight[i][j] += self.true_neurons[m][i] * self.true_neurons[m][j]
                 self.neuron_weight[i][j] /= 1.0 * self.true_neurons_num
-        print(self.neuron_weight)
+                
+    def add_noise(self, neuron_, rate):
+        neuron = copy.deepcopy(neuron_)
+        for i in range(len(neuron)):
+            if random.random() < rate:
+                neuron[i] = HopfieldNeuralNetwork.plus_or_minus()
+        return neuron
+    
+    def print_neuron(self, neuron):
+        for i in range(self.square_size):
+            for j in range(self.square_size):
+                if neuron[i * self.square_size + j] > 0:
+                    print("● ", end="")
+                else:
+                    print("○ ", end="")
+            print("")
+        print("")            
+            
+    def print_true_neuron(self):
+        for i in range(self.true_neurons_num):
+            self.print_neuron(self.true_neurons[i])
 
-    def plus_or_minus(self):
+    def update_neuron(self, neuron, sync=False):
+        if sync:
+            new_neuron = copy.deepcopy(neuron)
+            for i in range(len(new_neuron)):
+                val = 0
+                for j in range(len(neuron)):
+                    val += self.neuron_weight[i][j] * neuron[j]
+                    new_neuron[i] = HopfieldNeuralNetwork.activate_function(val)
+            neuron = new_neuron
+        else:
+            for i in range(len(neuron)):
+                ii = int(random.random() * len(neuron) * 4 % len(neuron))
+                val = 0
+                for j in range(len(neuron)):
+                    val += self.neuron_weight[ii][j] * neuron[j]
+                neuron[ii] = HopfieldNeuralNetwork.activate_function(val)
+        return neuron
+
+    def optimize_neuron(self, neuron_):
+        neuron = copy.deepcopy(neuron_)
+        #if self.debug_print:
+        #    print("[Neuron Before Trained]")
+        #    self.print_neuron(neuron)
+
+        cnt = 0
+        while(True):
+            pre_neuron = copy.deepcopy(neuron)            
+            neuron = self.update_neuron(neuron, sync=False)
+            cnt += 1
+            if self.judge_if_match(pre_neuron, neuron) > 0:
+                if self.debug_print:
+                    print("[Train finished with {} times".format(cnt))
+                break
+            
+        if self.debug_print:
+            print("[Neuron After Trained]")
+            self.print_neuron(neuron)
+        return neuron
+
+    def calc_similarity(self, neuron1, neuron2):
+        sim = 0
+        for i in range(len(neuron1)):
+            if neuron1[i] == neuron2[i]:
+                sim += 1.
+        sim /= len(neuron1)
+        
+        if self.debug_print:
+            print("[Similarity] {}%".format(sim * 100))
+        return sim
+
+    def judge_if_match(self, neuron1, neuron2):
+        for i in range(len(neuron1)):
+            if neuron1[i] != neuron2[i]:
+                return -1
+        return 1
+    
+    @staticmethod
+    def activate_function(val):
+        return HopfieldNeuralNetwork.sgn(val)
+
+    @staticmethod
+    def plus_or_minus():
         if random.random() > 0.5:
             return 1
         else:
             return -1
         
-    def add_noise(self, neuron, rate):
-        for i in range(len(neuron)):
-            if random.random() < rate:
-                neuron[i] = neuron[i] * -1
-        return neuron
-    
-    def print_neuron(self, neuron):
-        for i in range(int(math.sqrt(len(neuron)))):
-            for j in range(int(math.sqrt(len(neuron)))):
-                if neuron[i * int(math.sqrt(len(neuron))) + j] > 0:
-                    print("● ", end="")
-                else:
-                    print("○ ", end="")
-            print("")
-        
+    @staticmethod
+    def sgn(val):
+        if val > 0:
+            return 1
+        else:
+            return -1
 
 if __name__ == '__main__':
     hnn = HopfieldNeuralNetwork()
-    hnn.print_neuron(hnn.neuron)
+    for i in range(hnn.true_neurons_num):
+        neuron = hnn.add_noise(hnn.true_neurons[i], 0.5)
+        neuron = hnn.optimize_neuron(neuron)
+        hnn.calc_similarity(neuron, hnn.true_neurons[i])
