@@ -1,13 +1,14 @@
+# TODO delete copy.deepcopy() if it is not needed
 import math
 import random
 import copy
 
 class HopfieldNeuralNetwork:
-    def __init__(self):
-        self.debug_print = False
-        self.square_size = 5
+    def __init__(self, square_size=5, true_neurons_num=1, debug_print=False):
+        self.debug_print = debug_print
+        self.square_size = square_size
         
-        self.true_neurons_num = 3
+        self.true_neurons_num = true_neurons_num
         self.init_true_neuron()
 
         self.neuron_weight = [[0 for i in range(self.square_size**2)] for j in range(self.square_size**2)]
@@ -75,34 +76,43 @@ class HopfieldNeuralNetwork:
 
         cnt = 0
         while(True):
-            pre_neuron = copy.deepcopy(neuron)            
             neuron = self.update_neuron(neuron, sync=False)
             cnt += 1
-            if self.judge_if_match(pre_neuron, neuron) > 0:
-                print("[Optimize] finished with {} times".format(cnt))
+            if self.check_if_finished(neuron) > 0:
+                if self.debug_print:
+                    print("[Optimize] finished with {} times".format(cnt))
                 break
             
         if self.debug_print:
             print("[Optimize] Neuron After Trained")
             self.print_neuron(neuron)
-        return neuron
+        return neuron, cnt
 
-    def calc_similarity(self, neuron1, neuron2):
-        sim = 0
-        for i in range(len(neuron1)):
-            if neuron1[i] == neuron2[i]:
-                sim += 1.
-        sim /= len(neuron1)
-        
-        print("[Similarity] {}%".format(sim * 100))
-        return sim
-
-    def judge_if_match(self, neuron1, neuron2):
-        for i in range(len(neuron1)):
-            if neuron1[i] != neuron2[i]:
+    def check_if_finished(self, neuron):
+        new_neuron = copy.deepcopy(neuron)
+        for i in range(len(new_neuron)):
+            val = 0
+            for j in range(len(neuron)):
+                val += self.neuron_weight[i][j] * neuron[j]
+                new_neuron[i] = self.activate_function(val)
+                
+        for i in range(len(new_neuron)):
+            if new_neuron[i] != neuron[i]:
                 return -1
         return 1
-    
+
+    def calc_similarity(self, neuron):
+        sim = [0 for i in range(self.true_neurons_num)]
+        for i in range(self.true_neurons_num):
+            for j in range(len(neuron)):
+                if neuron[j] == self.true_neurons[i][j]:
+                    sim[i] += 1.
+            sim[i] /= len(neuron)
+        
+        if self.debug_print:        
+            print("[Similarity] {}%".format(max(sim) * 100))
+        return max(sim)
+
     def activate_function(self, val):
         return HopfieldNeuralNetwork.sgn(val)
 
@@ -121,8 +131,32 @@ class HopfieldNeuralNetwork:
             return -1
 
 if __name__ == '__main__':
-    hnn = HopfieldNeuralNetwork()
-    for i in range(hnn.true_neurons_num):
-        neuron = hnn.add_noise(hnn.true_neurons[i], 0.5)
+    for i in range(10):
+        tnn = i + 1
+        hnn = HopfieldNeuralNetwork(square_size=5, true_neurons_num=tnn, debug_print=False)
+    
+        for j in range(0, 100+1, 5):
+            sim = 0   
+            sim_cnt = 0
+            cnt = 0
+            for k in range(100):
+                neuron = hnn.add_noise(hnn.true_neurons[cnt % tnn], j * 0.01)
+                neuron, po = hnn.optimize_neuron(neuron)
+                sim_tmp = hnn.calc_similarity(neuron)
+                sim += sim_tmp
+                if int(sim_tmp) == 1:
+                    sim_cnt += 1
+                cnt += 1
+            print("{} {} {:2.4} {:2.4}".format(tnn, j, sim * 100.0 / cnt, sim_cnt * 100.0 / cnt))
+        
+    '''
+    tnn = 4
+    hnn = HopfieldNeuralNetwork(square_size=5, true_neurons_num=tnn, debug_print=False)
+    
+    for i in range(tnn):
+        neuron = hnn.add_noise(hnn.true_neurons[i], 0.8)
         neuron = hnn.optimize_neuron(neuron)
-        hnn.calc_similarity(neuron, hnn.true_neurons[i])
+        sim_tmp = []
+        sim_tmp = hnn.calc_similarity(neuron)
+        print("{:2.4}%".format(sim_tmp * 100.0))
+    '''
