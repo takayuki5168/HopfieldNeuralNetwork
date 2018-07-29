@@ -131,23 +131,24 @@ class HopfieldNeuralNetwork:
             return -1
 
 if __name__ == '__main__':
-    for i in range(10):
-        tnn = i + 1
-        hnn = HopfieldNeuralNetwork(square_size=5, true_neurons_num=tnn, debug_print=False)
-    
-        for j in range(0, 100+1, 5):
+    for i in range(1, 10+1, 3):
+        noise = 0.3
+
+        for po in range(10):
+            tnn = po + 1
+            hnn = HopfieldNeuralNetwork(square_size=i, true_neurons_num=tnn, debug_print=False)
             sim = 0   
             sim_cnt = 0
             cnt = 0
-            for k in range(100):
-                neuron = hnn.add_noise(hnn.true_neurons[cnt % tnn], j * 0.01)
+            for k in range(10):
+                neuron = hnn.add_noise(hnn.true_neurons[cnt % tnn], noise)
                 neuron, po = hnn.optimize_neuron(neuron)
                 sim_tmp = hnn.calc_similarity(neuron)
                 sim += sim_tmp
                 if int(sim_tmp) == 1:
                     sim_cnt += 1
                 cnt += 1
-            print("{} {} {:2.4} {:2.4}".format(tnn, j, sim * 100.0 / cnt, sim_cnt * 100.0 / cnt))
+            print("{} {} {:2.4} {:2.4}".format(i, tnn, sim * 100.0 / cnt, sim_cnt * 100.0 / cnt))
         
     '''
     tnn = 4
